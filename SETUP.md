@@ -12,7 +12,9 @@ npm run build
 
 ### 2. Configure Environment
 
-Create a `.env` file in the project root (copy from `.env.example`):
+#### For Development: Use `.env` file
+
+Create a `.env` file in the project root with your local development credentials:
 
 ```env
 AEM_AUTHOR_URL=https://author-instance.example.com
@@ -21,7 +23,11 @@ AEM_USERNAME=your-service-account
 AEM_PASSWORD=your-api-token-or-password
 ```
 
-### 3. Configure Claude Desktop
+**Important:** The `.env` file is git-ignored and should **never** be committed to version control.
+
+#### For Production: Use Claude Desktop Config
+
+For production or shared environments, configure credentials directly in Claude Desktop instead of `.env`:
 
 Update `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
@@ -30,7 +36,7 @@ Update `~/Library/Application Support/Claude/claude_desktop_config.json`:
   "mcpServers": {
     "aem-mcp-server": {
       "command": "node",
-      "args": ["/Users/jineetvora/Work/fun/aem-mcp-server/dist/index.js"],
+      "args": ["/path/to/aem-mcp-server/dist/index.js"],
       "env": {
         "AEM_AUTHOR_URL": "https://author.example.com",
         "AEM_PUBLISH_URL": "https://publish.example.com",
@@ -40,6 +46,20 @@ Update `~/Library/Application Support/Claude/claude_desktop_config.json`:
     }
   }
 }
+```
+
+**Security Best Practices:**
+- Never commit `.env` to version control (already git-ignored ✓)
+- For production, use system environment variables or your OS keychain instead of hardcoding credentials in config files
+- Consider using temporary API tokens that expire rather than permanent passwords
+- Regularly rotate credentials and monitor access logs
+
+### 3. Verify Installation
+
+Run a quick test to ensure everything is configured:
+
+```bash
+npm run build
 ```
 
 ### 4. Use in Claude
