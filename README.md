@@ -74,10 +74,12 @@ The server exposes the following tools through the MCP protocol:
 - `list_expiring_soon` - Find assets approaching expiration (configurable timeframe)
 - `list_recently_expired` - Query recently expired assets
 - `check_asset_references` - Find published pages that reference a specific asset
-- `extend_asset_expiration` - Extend asset expiration dates
+- **⚠️ `extend_asset_expiration`** - **WRITE OPERATION** - Extend asset expiration dates. Modifies AEM asset metadata. Use with caution.
 
 ### Log Analysis
 - `analyze_aem_logs` - Query AEM logs with natural language filtering and caching
+
+**Legend:** ⚠️ indicates tools that modify content and should be used carefully.
 
 ## Development
 

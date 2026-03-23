@@ -105,7 +105,7 @@ const TOOLS: Tool[] = [
   {
     name: 'extend_asset_expiration',
     description:
-      'Extend the expiration date of an asset. Default is 1 year from today.',
+      '⚠️  WRITE OPERATION - Extend the expiration date of an asset. Updates asset metadata in AEM. Default is 1 year from today. Use with caution as this modifies content.',
     inputSchema: {
       type: 'object' as const,
       properties: {
