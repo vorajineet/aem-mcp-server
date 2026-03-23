@@ -1,0 +1,40 @@
+{
+  "name": "aem-dam-expiration",
+  "version": "0.1.0",
+  "description": "MCP server to manage AEM DAM asset expiration - find expired assets, check references in published pages, and auto-extend expiration dates",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "node --test dist/**/*.test.js",
+    "lint": "eslint src/**/*.ts",
+    "start": "node dist/index.js"
+  },
+  "keywords": [
+    "aem",
+    "dam",
+    "asset-management",
+    "expiration",
+    "mcp-server"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "adm-zip": "^0.5.10",
+    "dotenv": "^16.3.1",
+    "node-fetch": "^3.3.0"
+  },
+  "devDependencies": {
+    "@types/adm-zip": "^0.5.5",
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.54.0",
+    "typescript": "^5.3.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
