@@ -41,14 +41,34 @@ export class AEMClient {
   }
 
   /**
+   * Internal fetch wrapper for AEM API calls
+   */
+  private async aemFetch(url: string, method: 'GET' | 'POST' = 'GET', body?: string): Promise<any> {
+    const response = await fetch(url, {
+      method,
+      headers: {
+        Authorization: this.authHeader,
+        Accept: 'application/json',
+        ...(body && { 'Content-Type': 'application/x-www-form-urlencoded' }),
+      },
+      ...(body && { body }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`AEM request failed: ${response.status} ${response.statusText} (${url})`);
+    }
+
+    // POST requests may not return JSON
+    return method === 'GET' ? response.json() : true;
+  }
+
+  /**
    * Get expired assets from DAM
    * Queries for assets where prism:expirationDate is in the past
    */
   async getExpiredAssets(): Promise<Asset[]> {
     const now = new Date().toISOString();
     
-    // Query for all assets that have the prism:expirationDate property
-    // (We'll do date filtering client-side to avoid complex QueryBuilder syntax)
     const params = new URLSearchParams({
       path: '/content/dam',
       type: 'dam:Asset',
@@ -65,52 +85,30 @@ export class AEMClient {
       console.error('[DEBUG] QueryBuilder URL:', url);
       console.error('[DEBUG] Current time for comparison:', now);
       
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          Authorization: this.authHeader,
-          Accept: 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `QueryBuilder request failed: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const result = (await response.json()) as QueryResult;
+      const result = (await this.aemFetch(url)) as QueryResult;
       console.error('[DEBUG] QueryBuilder returned', result.hits.length, 'hits');
-      console.error('[DEBUG] Raw hits:', JSON.stringify(result.hits, null, 2));
       
       const nowDate = new Date();
       
-      // For each asset returned by QueryBuilder, fetch the actual property value from JCR
+      // Batch fetch all metadata in parallel
+      const metadataPromises = result.hits.map(hit =>
+        this.aemFetch(
+          `${this.config.authorUrl}${hit.path}/jcr:content/metadata.json`
+        ).catch(() => null) // Handle failed requests gracefully
+      );
+      
+      const metadataResults = await Promise.all(metadataPromises);
+      console.error('[DEBUG] Fetched metadata for', result.hits.length, 'assets');
+      
+      // Process results
       const assets: Asset[] = [];
-      for (const hit of result.hits) {
-        try {
-          // Fetch the asset's metadata properties
-          const propResponse = await fetch(
-            `${this.config.authorUrl}${hit.path}/jcr:content/metadata.json`,
-            {
-              method: 'GET',
-              headers: {
-                Authorization: this.authHeader,
-                Accept: 'application/json',
-              },
-            }
-          );
+      for (let i = 0; i < result.hits.length; i++) {
+        const hit = result.hits[i];
+        const metadata = metadataResults[i];
+        
+        if (metadata) {
+          const expirationDate = metadata['prism:expirationDate'];
           
-          let expirationDate = undefined;
-          if (propResponse.ok) {
-            const metadata = (await propResponse.json()) as Record<string, any>;
-            expirationDate = metadata['prism:expirationDate'];
-            console.error(`[DEBUG] Fetched ${hit.path}: expirationDate="${expirationDate}"`);
-          } else {
-            console.error(`[DEBUG] Failed to fetch metadata for ${hit.path}: ${propResponse.status}`);
-          }
-          
-          // Only include if we got a valid expiration date that is in the past
           if (expirationDate) {
             const expDate = new Date(expirationDate);
             const isExpired = expDate < nowDate;
@@ -126,12 +124,10 @@ export class AEMClient {
               });
             }
           }
-        } catch (error) {
-          console.error(`[DEBUG] Error processing ${hit.path}:`, String(error));
         }
       }
       
-      console.error('[DEBUG] Final assets after filtering:', JSON.stringify(assets, null, 2));
+      console.error('[DEBUG] Final assets after filtering:', assets.length, 'expired assets');
       return assets;
     } catch (error) {
       throw new Error(`Failed to fetch expired assets: ${String(error)}`);
@@ -142,7 +138,6 @@ export class AEMClient {
    * Get assets that will expire within a given timeframe
    */
   async getExpiringAssets(timeframeMs: number): Promise<Asset[]> {
-    // Query for all assets that have the prism:expirationDate property
     const params = new URLSearchParams({
       path: '/content/dam',
       type: 'dam:Asset',
@@ -158,53 +153,33 @@ export class AEMClient {
       const url = `${this.config.authorUrl}/bin/querybuilder.json?${params}`;
       console.error('[DEBUG] Expiring assets query URL:', url);
       
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          Authorization: this.authHeader,
-          Accept: 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `QueryBuilder request failed: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const result = (await response.json()) as QueryResult;
+      const result = (await this.aemFetch(url)) as QueryResult;
       console.error('[DEBUG] QueryBuilder returned', result.hits.length, 'hits');
       
       const now = new Date();
       const expirationThreshold = new Date(now.getTime() + timeframeMs);
-      
       console.error('[DEBUG] Current time:', now.toISOString());
       console.error('[DEBUG] Expiration threshold:', expirationThreshold.toISOString());
       
-      // For each asset, fetch the actual property value and check if it's within timeframe
+      // Batch fetch all metadata in parallel
+      const metadataPromises = result.hits.map(hit =>
+        this.aemFetch(
+          `${this.config.authorUrl}${hit.path}/jcr:content/metadata.json`
+        ).catch(() => null)
+      );
+      
+      const metadataResults = await Promise.all(metadataPromises);
+      console.error('[DEBUG] Fetched metadata for', result.hits.length, 'assets');
+      
+      // Process results
       const assets: Asset[] = [];
-      for (const hit of result.hits) {
-        try {
-          // Fetch the asset's metadata properties
-          const propResponse = await fetch(
-            `${this.config.authorUrl}${hit.path}/jcr:content/metadata.json`,
-            {
-              method: 'GET',
-              headers: {
-                Authorization: this.authHeader,
-                Accept: 'application/json',
-              },
-            }
-          );
+      for (let i = 0; i < result.hits.length; i++) {
+        const hit = result.hits[i];
+        const metadata = metadataResults[i];
+        
+        if (metadata) {
+          const expirationDate = metadata['prism:expirationDate'];
           
-          let expirationDate = undefined;
-          if (propResponse.ok) {
-            const metadata = (await propResponse.json()) as Record<string, any>;
-            expirationDate = metadata['prism:expirationDate'];
-            console.error(`[DEBUG] Fetched ${hit.path}: expirationDate="${expirationDate}"`);
-          }
-          
-          // Check if asset expires within the timeframe but hasn't expired yet
           if (expirationDate) {
             const expDate = new Date(expirationDate);
             const daysUntilExpiration = Math.ceil(
@@ -227,15 +202,13 @@ export class AEMClient {
               });
             }
           }
-        } catch (error) {
-          console.error(`[DEBUG] Error processing ${hit.path}:`, String(error));
         }
       }
       
       // Sort by days until expiration (ascending - soonest first)
       assets.sort((a, b) => (a.daysUntilExpiration || 0) - (b.daysUntilExpiration || 0));
+      console.error('[DEBUG] Final expiring assets:', assets.length, 'assets');
       
-      console.error('[DEBUG] Final expiring assets:', JSON.stringify(assets, null, 2));
       return assets;
     } catch (error) {
       throw new Error(`Failed to fetch expiring assets: ${String(error)}`);
@@ -246,7 +219,6 @@ export class AEMClient {
    * Get assets that have expired within a given timeframe (looking backward in time)
    */
   async getRecentlyExpiredAssets(timeframeMs: number): Promise<Asset[]> {
-    // Query for all assets that have the prism:expirationDate property
     const params = new URLSearchParams({
       path: '/content/dam',
       type: 'dam:Asset',
@@ -262,53 +234,33 @@ export class AEMClient {
       const url = `${this.config.authorUrl}/bin/querybuilder.json?${params}`;
       console.error('[DEBUG] Recently expired assets query URL:', url);
       
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          Authorization: this.authHeader,
-          Accept: 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `QueryBuilder request failed: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const result = (await response.json()) as QueryResult;
+      const result = (await this.aemFetch(url)) as QueryResult;
       console.error('[DEBUG] QueryBuilder returned', result.hits.length, 'hits');
       
       const now = new Date();
       const expirationThreshold = new Date(now.getTime() - timeframeMs);
-      
       console.error('[DEBUG] Current time:', now.toISOString());
       console.error('[DEBUG] Recently expired threshold (how far back):', expirationThreshold.toISOString());
       
-      // For each asset, fetch the actual property value and check if it expired recently
+      // Batch fetch all metadata in parallel
+      const metadataPromises = result.hits.map(hit =>
+        this.aemFetch(
+          `${this.config.authorUrl}${hit.path}/jcr:content/metadata.json`
+        ).catch(() => null)
+      );
+      
+      const metadataResults = await Promise.all(metadataPromises);
+      console.error('[DEBUG] Fetched metadata for', result.hits.length, 'assets');
+      
+      // Process results
       const assets: Asset[] = [];
-      for (const hit of result.hits) {
-        try {
-          // Fetch the asset's metadata properties
-          const propResponse = await fetch(
-            `${this.config.authorUrl}${hit.path}/jcr:content/metadata.json`,
-            {
-              method: 'GET',
-              headers: {
-                Authorization: this.authHeader,
-                Accept: 'application/json',
-              },
-            }
-          );
+      for (let i = 0; i < result.hits.length; i++) {
+        const hit = result.hits[i];
+        const metadata = metadataResults[i];
+        
+        if (metadata) {
+          const expirationDate = metadata['prism:expirationDate'];
           
-          let expirationDate = undefined;
-          if (propResponse.ok) {
-            const metadata = (await propResponse.json()) as Record<string, any>;
-            expirationDate = metadata['prism:expirationDate'];
-            console.error(`[DEBUG] Fetched ${hit.path}: expirationDate="${expirationDate}"`);
-          }
-          
-          // Check if asset expired within the timeframe (in the past)
           if (expirationDate) {
             const expDate = new Date(expirationDate);
             const daysSinceExpiration = Math.ceil(
@@ -331,15 +283,13 @@ export class AEMClient {
               });
             }
           }
-        } catch (error) {
-          console.error(`[DEBUG] Error processing ${hit.path}:`, String(error));
         }
       }
       
       // Sort by days since expiration (ascending - most recently expired first)
       assets.sort((a, b) => (a.daysSinceExpiration || 0) - (b.daysSinceExpiration || 0));
+      console.error('[DEBUG] Final recently expired assets:', assets.length, 'assets');
       
-      console.error('[DEBUG] Final recently expired assets:', JSON.stringify(assets, null, 2));
       return assets;
     } catch (error) {
       throw new Error(`Failed to fetch recently expired assets: ${String(error)}`);
@@ -350,7 +300,6 @@ export class AEMClient {
    * Find all pages that reference an asset and check if they are published
    */
   async getAssetReferences(assetPath: string): Promise<PageReference[]> {
-    // Search for pages on AUTHOR that contain references to this asset
     const params = new URLSearchParams({
       path: '/content',
       type: 'cq:Page',
@@ -363,59 +312,40 @@ export class AEMClient {
       const url = `${this.config.authorUrl}/bin/querybuilder.json?${params}`;
       console.error('[DEBUG] Reference query URL:', url);
       
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          Authorization: this.authHeader,
-          Accept: 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `Reference query failed: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const result = (await response.json()) as QueryResult;
+      const result = (await this.aemFetch(url)) as QueryResult;
       console.error('[DEBUG] Reference query returned', result.hits.length, 'pages');
 
-      // For each page, check if it has been published/activated
-      const publishedPages: PageReference[] = [];
+      // Batch fetch all page properties in parallel
+      const pagePropsPromises = result.hits.map(hit =>
+        this.aemFetch(
+          `${this.config.authorUrl}${hit.path}/jcr:content.json`
+        ).catch(() => null)
+      );
       
-      for (const hit of result.hits) {
-        try {
-          // Fetch the page's properties to check replication status
-          const pagePropsResponse = await fetch(
-            `${this.config.authorUrl}${hit.path}/jcr:content.json`,
-            {
-              method: 'GET',
-              headers: {
-                Authorization: this.authHeader,
-                Accept: 'application/json',
-              },
-            }
-          );
+      const pagePropsResults = await Promise.all(pagePropsPromises);
+      console.error('[DEBUG] Fetched properties for', result.hits.length, 'pages');
+      
+      // Process results
+      const publishedPages: PageReference[] = [];
+      for (let i = 0; i < result.hits.length; i++) {
+        const hit = result.hits[i];
+        const pageProps = pagePropsResults[i];
+        
+        if (pageProps) {
+          // Check if page has been published by looking for cq:lastReplicated
+          const isPublished = pageProps['cq:lastReplicated'] !== undefined || 
+                             pageProps['cq:lastReplicatedby'] !== undefined;
           
-          if (pagePropsResponse.ok) {
-            const pageProps = (await pagePropsResponse.json()) as Record<string, any>;
-            // Check if page has been published by looking for cq:lastReplicated
-            const isPublished = pageProps['cq:lastReplicated'] !== undefined || 
-                               pageProps['cq:lastReplicatedby'] !== undefined;
-            
-            console.error(`[DEBUG] ${hit.path}: isPublished=${isPublished}, lastReplicated=${pageProps['cq:lastReplicated']}`);
-            
-            if (isPublished) {
-              publishedPages.push({
-                path: hit.path,
-                title: pageProps['jcr:title'] || hit.name,
-                status: 'published',
-                lastPublished: pageProps['cq:lastReplicated'],
-              });
-            }
+          console.error(`[DEBUG] ${hit.path}: isPublished=${isPublished}, lastReplicated=${pageProps['cq:lastReplicated']}`);
+          
+          if (isPublished) {
+            publishedPages.push({
+              path: hit.path,
+              title: pageProps['jcr:title'] || hit.name,
+              status: 'published',
+              lastPublished: pageProps['cq:lastReplicated'],
+            });
           }
-        } catch (error) {
-          console.error(`[DEBUG] Failed to check publication status for ${hit.path}:`, String(error));
         }
       }
       
@@ -436,27 +366,13 @@ export class AEMClient {
     newExpirationDate: string
   ): Promise<boolean> {
     try {
-      const response = await fetch(
-        `${this.config.authorUrl}${assetPath}/jcr:content.json`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: this.authHeader,
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams({
-            'jcr:content/metadata/prism:expirationDate': newExpirationDate,
-            '_charset_': 'utf-8',
-          }).toString(),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          `Update failed: ${response.status} ${response.statusText}`
-        );
-      }
-
+      const url = `${this.config.authorUrl}${assetPath}/jcr:content.json`;
+      const body = new URLSearchParams({
+        'jcr:content/metadata/prism:expirationDate': newExpirationDate,
+        '_charset_': 'utf-8',
+      }).toString();
+      
+      await this.aemFetch(url, 'POST', body);
       return true;
     } catch (error) {
       throw new Error(

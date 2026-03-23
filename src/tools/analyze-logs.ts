@@ -7,6 +7,7 @@ import { AEMClient } from '../aem-client.js';
 import AdmZip from 'adm-zip';
 import fs from 'fs';
 import path from 'path';
+import { parseCompactTimeRange } from '../utils/timeframe-parser.js';
 
 const LOGS_CACHE_DIR = './logs-cache';
 const CACHE_VALIDITY_MS = 10 * 60 * 1000; // 10 minutes
@@ -147,23 +148,7 @@ function parseQueryContext(query: string): {
 function parseTimeRange(timeRange: string = '24h'): number {
   console.error('[PARSE_TIME_RANGE] Input:', timeRange);
   
-  const match = timeRange.match(/^(\d+)([hdmw])$/);
-  if (!match)
-    throw new Error(
-      'Invalid time range format. Use: 1h, 24h, 7d, 2w'
-    );
-
-  const [, amount, unit] = match;
-  console.error('[PARSE_TIME_RANGE] Parsed amount:', amount, 'unit:', unit);
-  
-  const multipliers: Record<string, number> = {
-    m: 60 * 1000,
-    h: 60 * 60 * 1000,
-    d: 24 * 60 * 60 * 1000,
-    w: 7 * 24 * 60 * 60 * 1000
-  };
-
-  const result = parseInt(amount) * multipliers[unit];
+  const result = parseCompactTimeRange(timeRange);
   console.error('[PARSE_TIME_RANGE] Result in milliseconds:', result);
   
   return result;
