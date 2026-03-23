@@ -1,5 +1,5 @@
 {
-  "name": "aem-dam-expiration",
+  "name": "aem-mcp-server",
   "version": "0.1.0",
   "description": "MCP server to manage AEM DAM asset expiration - find expired assets, check references in published pages, and auto-extend expiration dates",
   "type": "module",

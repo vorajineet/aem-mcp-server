@@ -5,7 +5,7 @@
 ### 1. Build the Project
 
 ```bash
-cd /Users/jineetvora/Work/fun/aem-dam-expiration
+cd /Users/jineetvora/Work/fun/aem-mcp-server
 npm install
 npm run build
 ```
@@ -28,9 +28,9 @@ Update `~/Library/Application Support/Claude/claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "aem-dam-expiration": {
+    "aem-mcp-server": {
       "command": "node",
-      "args": ["/Users/jineetvora/Work/fun/aem-dam-expiration/dist/index.js"],
+      "args": ["/Users/jineetvora/Work/fun/aem-mcp-server/dist/index.js"],
       "env": {
         "AEM_AUTHOR_URL": "https://author.example.com",
         "AEM_PUBLISH_URL": "https://publish.example.com",
@@ -61,7 +61,7 @@ Example conversations:
 ## Project Structure
 
 ```
-aem-dam-expiration/
+aem-mcp-server/
 ├── src/
 │   ├── index.ts                          # MCP server entry point
 │   ├── aem-client.ts                     # AEM REST API wrapper

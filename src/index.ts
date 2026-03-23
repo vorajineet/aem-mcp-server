@@ -172,7 +172,7 @@ class AEMExpirationServer {
 
     this.server = new Server(
       {
-        name: 'aem-dam-expiration',
+        name: 'aem-mcp-server',
         version: '0.1.0',
       },
       {
