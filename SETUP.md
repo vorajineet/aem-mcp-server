@@ -1,4 +1,4 @@
-# AEM DAM Expiration Manager - Setup Guide
+# AEM MCP Server - Setup Guide
 
 ## Quick Start
 
@@ -46,16 +46,18 @@ Update `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 Example conversations:
 
-**Find expired assets:**
+**Asset Management:**
 > "Show me all expired assets in the DAM"
-
-**Check if assets are in use:**
-> "Check which pages reference /content/dam/mysite/hero-image.jpg"
-
-**Auto-extend expiration:**
+> "What assets will expire in the next 30 days?"
+> "Which pages reference /content/dam/mysite/hero-image.jpg?"
 > "Extend the expiration of /content/dam/mysite/important-document.pdf by one year"
 
-**Complete workflow:**
+**Log Analysis:**
+> "Show me errors from the last 24 hours"
+> "Find all 404 errors in the DAM logs"
+> "What errors occurred in the last 2 hours?"
+
+**Complete Workflow:**
 > "Find all expired assets, tell me which ones are referenced in published pages, and extend the expiration by one year for any that are referenced"
 
 ## Project Structure
@@ -66,13 +68,18 @@ aem-mcp-server/
 │   ├── index.ts                          # MCP server entry point
 │   ├── aem-client.ts                     # AEM REST API wrapper
 │   ├── asset-config.ts                   # Configuration management
-│   ├── example.ts                        # Usage examples
+│   ├── constants.ts                      # Centralized configuration constants
 │   ├── tools/
 │   │   ├── list-expired-assets.ts        # Tool: List expired assets
+│   │   ├── list-expiring-soon.ts         # Tool: List assets expiring soon
+│   │   ├── list-recently-expired.ts      # Tool: List recently expired assets
 │   │   ├── check-references.ts           # Tool: Find page references
-│   │   └── extend-expiration.ts          # Tool: Update expiration dates
+│   │   ├── extend-expiration.ts          # Tool: Update expiration dates (⚠️ write op)
+│   │   └── analyze-logs.ts               # Tool: Analyze AEM logs with NLP
 │   └── utils/
-│       └── date-utils.ts                 # Date manipulation helpers
+│       ├── date-utils.ts                 # Date manipulation helpers
+│       ├── timeframe-parser.ts           # Natural language timeframe parsing
+│       └── logger.ts                     # Environment-aware logging
 ├── dist/                                 # Compiled JavaScript (generated)
 ├── package.json
 ├── tsconfig.json
