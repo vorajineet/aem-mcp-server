@@ -50,7 +50,6 @@ export const TIME = {
 
 // Cache configuration
 export const CACHE = {
-  LOGS_DIR: './logs-cache',
   VALIDITY_MS: 10 * 60 * 1000, // 10 minutes
 } as const;
 

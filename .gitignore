@@ -7,4 +7,3 @@ dist/
 *.tsbuildinfo
 .idea/
 .vscode/
-logs-cache/

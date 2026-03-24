@@ -5,71 +5,19 @@
 
 import { AEMClient } from '../aem/aem-client.js';
 import AdmZip from 'adm-zip';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { parseCompactTimeRange } from '../utils/timeframe-parser.js';
 
-// Get the directory where this script is located
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-// Create cache directory in project root (parent of src/tools)
-const LOGS_CACHE_DIR = path.join(__dirname, '../../logs-cache');
 const CACHE_VALIDITY_MS = 10 * 60 * 1000; // 10 minutes
 
-// Track last cache time
-let lastCacheTime = 0;
+// In-memory cache to avoid re-downloading logs for follow-up queries
+let logCache: { content: string; timestamp: number } | null = null;
 
-/**
- * Ensure cache directory exists
- */
-function ensureCacheDir(): void {
-  try {
-    if (!fs.existsSync(LOGS_CACHE_DIR)) {
-      fs.mkdirSync(LOGS_CACHE_DIR, { recursive: true });
-      console.error('[CACHE] Created cache directory:', LOGS_CACHE_DIR);
-    }
-  } catch (error) {
-    console.error('[CACHE] Error creating cache directory:', error);
-    throw new Error(`Failed to create cache directory at ${LOGS_CACHE_DIR}: ${error}`);
-  }
-}
-
-/**
- * Check if cache is still valid
- */
 function isCacheValid(): boolean {
-  const now = Date.now();
-  const cacheAge = now - lastCacheTime;
-  const isValid = cacheAge < CACHE_VALIDITY_MS && fs.existsSync(path.join(LOGS_CACHE_DIR, 'error.log'));
-  
-  console.error('[CACHE] Cache age:', Math.round(cacheAge / 1000), 'seconds');
-  console.error('[CACHE] Cache validity:', Math.round(CACHE_VALIDITY_MS / 1000), 'seconds');
-  console.error('[CACHE] Is valid:', isValid);
-  
+  if (!logCache) return false;
+  const cacheAge = Date.now() - logCache.timestamp;
+  const isValid = cacheAge < CACHE_VALIDITY_MS;
+  console.error('[CACHE] Cache age:', Math.round(cacheAge / 1000), 's, valid:', isValid);
   return isValid;
-}
-
-/**
- * Get cached error.log content
- */
-function getCachedErrorLog(): string {
-  const cachedPath = path.join(LOGS_CACHE_DIR, 'error.log');
-  console.error('[CACHE] Reading from:', cachedPath);
-  const content = fs.readFileSync(cachedPath, 'utf-8');
-  console.error('[CACHE] Loaded cached error.log, size:', content.length, 'characters');
-  return content;
-}
-
-/**
- * Save error.log to cache
- */
-function saveCacheErrorLog(content: string): void {
-  ensureCacheDir();
-  const cachedPath = path.join(LOGS_CACHE_DIR, 'error.log');
-  fs.writeFileSync(cachedPath, content, 'utf-8');
-  lastCacheTime = Date.now();
-  console.error('[CACHE] Saved error.log to cache, size:', content.length, 'characters');
-  console.error('[CACHE] Cache will expire in', Math.round(CACHE_VALIDITY_MS / 1000), 'seconds');
 }
 
 export interface AnalyzeLogsInput {
@@ -350,7 +298,7 @@ export async function analyzeAEMLogs(
     
     if (!forceSkipCache && isCacheValid()) {
       console.error('[ANALYZE_LOGS] Using cached logs');
-      logContent = getCachedErrorLog();
+      logContent = logCache!.content;
     } else {
       if (forceSkipCache) {
         console.error('[ANALYZE_LOGS] Cache disabled - downloading fresh logs from AEM...');
@@ -392,8 +340,8 @@ export async function analyzeAEMLogs(
       logContent = zip.readAsText(errorLogEntry);
       console.error('[ANALYZE_LOGS] error.log size:', logContent.length, 'characters');
       
-      // Save to cache for follow-up queries
-      saveCacheErrorLog(logContent);
+      // Save to in-memory cache for follow-up queries
+      logCache = { content: logContent, timestamp: Date.now() };
     }
 
     const logLines = logContent.split('\n');
