@@ -53,13 +53,7 @@ Configure Claude Desktop by updating `~/Library/Application Support/Claude/claud
   "mcpServers": {
     "aem-mcp-server": {
       "command": "node",
-      "args": ["/path/to/aem-mcp-server/dist/index.js"],
-      "env": {
-        "AEM_AUTHOR_URL": "https://author.your-aem-instance.com",
-        "AEM_PUBLISH_URL": "https://publish.your-aem-instance.com",
-        "AEM_USERNAME": "your-account",
-        "AEM_PASSWORD": "your-password"
-      }
+      "args": ["/path/to/aem-mcp-server/dist/index.js"]
     }
   }
 }
