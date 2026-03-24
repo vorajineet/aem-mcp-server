@@ -184,8 +184,13 @@ function parseLogLine(line: string): LogEntry | null {
 
   const [, timeStr, level, thread, logger, message] = match;
 
+  const timestamp = parseAEMTimestamp(timeStr);
+  if (isNaN(timestamp.getTime())) {
+    return null; // Skip entries with unparseable timestamps
+  }
+
   const parsed = {
-    timestamp: parseAEMTimestamp(timeStr),
+    timestamp,
     level,
     thread,
     logger,
@@ -199,7 +204,7 @@ function parseLogLine(line: string): LogEntry | null {
 function parseAEMTimestamp(timeStr: string): Date {
   // AEM format: "MM.dd.yyyy HH:mm:ss.SSS" → convert to "yyyy-MM-ddTHH:mm:ss.SSS"
   const match = timeStr.match(/(\d{2})\.(\d{2})\.(\d{4})\s(\d{2}:\d{2}:\d{2}\.\d{3})/);
-  if (!match) return new Date(timeStr);
+  if (!match) return new Date(NaN);
   const [, month, day, year, time] = match;
   return new Date(`${year}-${month}-${day}T${time}`);
 }
@@ -412,12 +417,12 @@ export async function analyzeAEMLogs(
     
     if (allLogs.length > 0) {
       console.error('[ANALYZE_LOGS] First log:', {
-        timestamp: allLogs[0].timestamp.toISOString(),
+        timestamp: allLogs[0].timestamp.toISOString?.() ?? 'Invalid',
         level: allLogs[0].level,
         message: allLogs[0].message.substring(0, 100)
       });
       console.error('[ANALYZE_LOGS] Last log:', {
-        timestamp: allLogs[allLogs.length - 1].timestamp.toISOString(),
+        timestamp: allLogs[allLogs.length - 1].timestamp.toISOString?.() ?? 'Invalid',
         level: allLogs[allLogs.length - 1].level,
         message: allLogs[allLogs.length - 1].message.substring(0, 100)
       });
