@@ -197,8 +197,11 @@ function parseLogLine(line: string): LogEntry | null {
 }
 
 function parseAEMTimestamp(timeStr: string): Date {
-  // Convert "03.23.2026 14:30:45.123" to Date
-  return new Date(timeStr.replace(/(\d{2})\.(\d{2})\.(\d{4})/, '$3-$2-$1'));
+  // AEM format: "MM.dd.yyyy HH:mm:ss.SSS" → convert to "yyyy-MM-ddTHH:mm:ss.SSS"
+  const match = timeStr.match(/(\d{2})\.(\d{2})\.(\d{4})\s(\d{2}:\d{2}:\d{2}\.\d{3})/);
+  if (!match) return new Date(timeStr);
+  const [, month, day, year, time] = match;
+  return new Date(`${year}-${month}-${day}T${time}`);
 }
 
 /**
