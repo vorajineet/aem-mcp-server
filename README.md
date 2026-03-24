@@ -1,93 +1,88 @@
 # AEM MCP Server
 
-A comprehensive Model Context Protocol (MCP) server for Adobe Experience Manager (AEM) that provides intelligent asset lifecycle management and log analysis capabilities:
+A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server for Adobe Experience Manager (AEM) that gives Claude Desktop direct access to your AEM instance — manage asset expirations, check page references, and analyze logs through natural conversation.
 
-1. **Asset Expiration Management** - Find expired assets, check their usage, and auto-extend expiration dates
-2. **Proactive Monitoring** - Identify assets expiring soon and recently expired assets
-3. **Log Analysis** - Query and analyze AEM logs with natural language, intelligent caching, and context filtering
+## What Can It Do?
 
-## Features
+| Capability | Description |
+|---|---|
+| **Asset Expiration Management** | Find expired assets, assets expiring soon, and recently expired assets |
+| **Reference Tracking** | Check which published (or unpublished) pages use a specific asset |
+| **Expiration Extension** | Extend asset expiration dates — set custom dates or add years |
+| **Log Analysis** | Query AEM error logs with natural language and smart in-memory caching |
 
-### Asset Lifecycle Management
-- **List Assets by Expiration** - Query assets by status: expired, expiring soon, or recently expired (with configurable timeframe and optional filter)
-- **Check Page References** - Determine which published pages reference specific assets
-- **Extend Expiration** - Automatically extend asset expiration dates
-
-### Log Analysis & Diagnostics
-- **Analyze AEM Logs** - Query logs with natural language (e.g., "errors in the last 24 hours")
-- **Smart Caching** - 10-minute cache to avoid re-downloading logs for follow-up queries
-- **Context Filtering** - Filter by log level, timeframe, keywords, and custom contexts
-- **Intent Detection** - Automatically detect when to skip cache based on query keywords
-
-## Setup
-
-### Prerequisites
-- Node.js 18+
-- AEM instance with API access
-- Valid AEM credentials (username/password or service account token)
-
-### Installation
+## Quick Start
 
 ```bash
 npm install
 npm run build
 ```
 
-### Configuration
-
-Create a `.env` file in the project root:
-
-```env
-AEM_AUTHOR_URL=https://author.your-aem-instance.com
-AEM_PUBLISH_URL=https://publish.your-aem-instance.com
-AEM_USERNAME=your-service-account
-AEM_PASSWORD=your-api-token-or-password
-```
-
-Configure Claude Desktop by updating `~/Library/Application Support/Claude/claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "aem-mcp-server": {
-      "command": "node",
-      "args": ["/path/to/aem-mcp-server/dist/index.js"]
-    }
-  }
-}
-```
+Then configure Claude Desktop — see [SETUP.md](SETUP.md) for the full guide.
 
 ## Available Tools
 
-The server exposes the following tools through the MCP protocol:
+| Tool | Type | Description |
+|---|---|---|
+| `list_assets_by_expiration` | Read | Query assets by status: `expired`, `expiring-soon`, or `recently-expired` |
+| `check_asset_references` | Read | Find pages referencing a specific asset (published or all) |
+| `extend_asset_expiration` | ⚠️ Write | Extend or set asset expiration dates. Modifies AEM metadata. |
+| `analyze_aem_logs` | Read | Query AEM logs with natural language, time ranges, and log level filters |
 
-### Asset Management
-- `list_assets_by_expiration` - List assets by expiration status: `expired`, `expiring-soon`, or `recently-expired`. Supports timeframe and filter parameters.
-- `check_asset_references` - Find published pages that reference a specific asset
-- **⚠️ `extend_asset_expiration`** - **WRITE OPERATION** - Extend asset expiration dates. Modifies AEM asset metadata. Use with caution.
+## Example Prompts
+
+Once connected, just ask Claude naturally:
+
+### Asset Expiration
+```
+Show me all expired assets
+What assets are expiring in the next 30 days?
+Show me assets that expired in the last 7 days
+Find expired assets with "hero" in the path
+```
+
+### Reference Checking
+```
+Which pages use /content/dam/mysite/hero-banner.jpg?
+Check references for /content/dam/mysite/logo.png including unpublished pages
+```
+
+### Expiration Management
+```
+Extend the expiration of /content/dam/mysite/important-doc.pdf by 2 years
+Set the expiration of /content/dam/mysite/banner.jpg to 2027-12-31
+```
 
 ### Log Analysis
-- `analyze_aem_logs` - Query AEM logs with natural language filtering and caching
+```
+Show me errors from the last 24 hours
+Find 404 errors in the DAM logs
+What publishing errors happened in the last 2 hours?
+Show me workflow errors from the last 7 days
+```
 
-**Legend:** ⚠️ indicates tools that modify content and should be used carefully.
+### Multi-Step Workflows
+```
+Find all expired assets, check which ones are still referenced by published pages,
+and extend the expiration by 1 year for any that are actively used.
 ```
 
 ## Architecture
 
 ```
 src/
-├── index.ts                         # MCP server entry point
+├── index.ts                         # MCP server entry point & tool registration
 ├── aem/
-│   ├── aem-client.ts                # AEM REST API wrapper with parallel fetch optimization
-│   ├── asset-config.ts              # Configuration and environment management
-│   └── constants.ts                 # Centralized configuration constants
+│   ├── aem-client.ts                # AEM REST API wrapper (parallel fetch)
+│   ├── asset-config.ts              # Environment variable loading
+│   └── constants.ts                 # Centralized config constants
 ├── tools/
-│   ├── list-assets-by-expiration.ts # Query assets by expiration status
-│   ├── check-references.ts          # Check asset page references tool
-│   ├── extend-expiration.ts         # Extend asset expiration tool (⚠️ write op)
-│   └── analyze-logs.ts              # Analyze AEM logs with NLP and caching
+│   ├── list-assets-by-expiration.ts # Unified expiration status queries
+│   ├── check-references.ts          # Asset reference lookup
+│   ├── extend-expiration.ts         # Expiration date updates (⚠️ write op)
+│   └── analyze-logs.ts              # Log analysis with in-memory caching
 └── utils/
-    ├── date-utils.ts                # Date parsing and calculation helpers
+    ├── date-utils.ts                # Date parsing and calculations
     ├── timeframe-parser.ts          # Natural language timeframe parsing
-    └── logger.ts                    # Environment-aware logging utility
+    └── logger.ts                    # Environment-aware logging
 ```

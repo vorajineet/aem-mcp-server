@@ -33,7 +33,7 @@ This is a **Model Context Protocol (MCP) server** for Adobe Experience Manager (
 - `src/tools/analyze-logs.ts` implements NLP-style query parsing
 - **10-minute cache** to avoid re-downloading large log files for follow-up queries
 - **Keyword-based cache skipping** - automatically skips cache for queries about "new", "recent", "fresh" data
-- Cache stored in `logs-cache/` directory (git-ignored)
+- Cache held in-memory (no files written to disk)
 
 ## File Structure Quick Reference
 

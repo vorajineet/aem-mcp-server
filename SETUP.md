@@ -1,42 +1,83 @@
 # AEM MCP Server - Setup Guide
 
-## Quick Start
+## Prerequisites
 
-### 1. Build the Project
+- **Node.js 18+** — [Download](https://nodejs.org/)
+- **Claude Desktop** — [Download](https://claude.ai/download)
+- **AEM instance** with API access (author + publish)
+- **AEM credentials** — username/password or service account token
+
+## 1. Build the Project
 
 ```bash
-cd /Users/jineetvora/Work/fun/aem-mcp-server
+cd aem-mcp-server
 npm install
 npm run build
 ```
 
-### 2. Configure Environment
+## 2. Configure AEM Credentials
 
-#### For Development: Use `.env` file
+You need four environment variables:
 
-Create a `.env` file in the project root with your local development credentials:
+| Variable | Description | Example |
+|---|---|---|
+| `AEM_AUTHOR_URL` | Author instance URL | `https://author.example.com` |
+| `AEM_PUBLISH_URL` | Publish instance URL | `https://publish.example.com` |
+| `AEM_USERNAME` | Service account or user | `my-service-account` |
+| `AEM_PASSWORD` | Password or API token | `my-api-token` |
+
+### Option A: `.env` file (recommended for development)
+
+Create a `.env` file in the project root:
 
 ```env
-AEM_AUTHOR_URL=https://author-instance.example.com
-AEM_PUBLISH_URL=https://publish-instance.example.com
+AEM_AUTHOR_URL=https://author.example.com
+AEM_PUBLISH_URL=https://publish.example.com
 AEM_USERNAME=your-service-account
 AEM_PASSWORD=your-api-token-or-password
 ```
 
-**Important:** The `.env` file is git-ignored and should **never** be committed to version control.
+> The `.env` file is git-ignored and should **never** be committed.
 
-#### For Production: Use Claude Desktop Config
+### Option B: Claude Desktop config (recommended for production)
 
-For production or shared environments, configure credentials directly in Claude Desktop instead of `.env`:
+Pass credentials directly through the Claude Desktop config (see step 3 below).
 
-Update `~/Library/Application Support/Claude/claude_desktop_config.json`:
+### Security Best Practices
+
+- Never commit credentials to version control
+- Prefer temporary/expiring API tokens over permanent passwords
+- Rotate credentials regularly
+- Use a dedicated service account with minimal required permissions
+
+## 3. Configure Claude Desktop
+
+Claude Desktop uses a JSON config file to register MCP servers. Edit:
+
+**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+
+### Minimal config (credentials via `.env` file):
 
 ```json
 {
   "mcpServers": {
     "aem-mcp-server": {
       "command": "node",
-      "args": ["/path/to/aem-mcp-server/dist/index.js"],
+      "args": ["/absolute/path/to/aem-mcp-server/dist/index.js"]
+    }
+  }
+}
+```
+
+### Full config (credentials inline):
+
+```json
+{
+  "mcpServers": {
+    "aem-mcp-server": {
+      "command": "node",
+      "args": ["/absolute/path/to/aem-mcp-server/dist/index.js"],
       "env": {
         "AEM_AUTHOR_URL": "https://author.example.com",
         "AEM_PUBLISH_URL": "https://publish.example.com",
@@ -48,118 +89,121 @@ Update `~/Library/Application Support/Claude/claude_desktop_config.json`:
 }
 ```
 
-**Security Best Practices:**
-- Never commit `.env` to version control (already git-ignored ✓)
-- For production, use system environment variables or your OS keychain instead of hardcoding credentials in config files
-- Consider using temporary API tokens that expire rather than permanent passwords
-- Regularly rotate credentials and monitor access logs
+> Replace `/absolute/path/to/aem-mcp-server` with the actual path where you cloned the project.
 
-### 3. Verify Installation
+### After saving the config
 
-Run a quick test to ensure everything is configured:
+1. **Quit Claude Desktop completely** (not just close the window)
+2. **Reopen Claude Desktop**
+3. Look for the **hammer icon** (🔨) in the chat input — this confirms the MCP server is connected
+4. Click the hammer icon to see the list of available tools
 
-```bash
-npm run build
+## 4. Disabling Tools
+
+You can disable specific tools without modifying code by using Claude Desktop's **tool approval** feature:
+
+### Per-conversation control
+When Claude wants to use a tool, it shows a confirmation prompt. You can:
+- **Allow once** — permit the tool call this one time
+- **Allow for this chat** — permit all calls to this tool in the current conversation
+- **Deny** — block the tool call
+
+### Disabling the write tool
+The `extend_asset_expiration` tool is the only write operation. If you want read-only access, you can simply deny it when prompted, or remove it from the server by commenting out its registration in `src/index.ts` and rebuilding:
+
+```typescript
+// In src/index.ts, comment out in the TOOLS array and switch statement:
+// { name: 'extend_asset_expiration', ... },
+// case 'extend_asset_expiration': ...
 ```
 
-### 4. Use in Claude
+Then rebuild: `npm run build`
 
-Example conversations:
+### Removing the entire MCP server
+Delete or rename the `aem-mcp-server` entry in your `claude_desktop_config.json` and restart Claude Desktop.
 
-**Asset Management:**
-> "Show me all expired assets in the DAM"
-> "What assets will expire in the next 30 days?"
-> "Which pages reference /content/dam/mysite/hero-image.jpg?"
-> "Extend the expiration of /content/dam/mysite/important-document.pdf by one year"
+## 5. Verify It Works
 
-**Log Analysis:**
-> "Show me errors from the last 24 hours"
-> "Find all 404 errors in the DAM logs"
-> "What errors occurred in the last 2 hours?"
-
-**Complete Workflow:**
-> "Find all expired assets, tell me which ones are referenced in published pages, and extend the expiration by one year for any that are referenced"
-
-## Project Structure
+After configuring, open Claude Desktop and try:
 
 ```
-aem-mcp-server/
-├── src/
-│   ├── index.ts                          # MCP server entry point
-│   ├── aem/
-│   │   ├── aem-client.ts                # AEM REST API wrapper
-│   │   ├── asset-config.ts              # Configuration management
-│   │   └── constants.ts                 # Centralized configuration constants
-│   ├── tools/
-│   │   ├── list-assets-by-expiration.ts  # Tool: List assets by expiration status
-│   │   ├── check-references.ts           # Tool: Find page references
-│   │   ├── extend-expiration.ts          # Tool: Update expiration dates (⚠️ write op)
-│   │   └── analyze-logs.ts              # Tool: Analyze AEM logs with NLP
-│   └── utils/
-│       ├── date-utils.ts                 # Date manipulation helpers
-│       ├── timeframe-parser.ts           # Natural language timeframe parsing
-│       └── logger.ts                     # Environment-aware logging
-├── dist/                                 # Compiled JavaScript (generated)
-├── package.json
-├── tsconfig.json
-├── README.md
-├── SETUP.md                              # This file
-└── claude.md                             # Claude project instructions
+Show me all expired assets
 ```
 
-## How It Works
+If the server is connected, Claude will call the `list_assets_by_expiration` tool and return results from your AEM instance.
 
-### 1. List Expired Assets
-Queries AEM DAM using QueryBuilder for assets where `prism:expirationDate` is in the past (under `jcr:content/metadata`).
+## Example Prompts
 
-### 2. Check References
-Searches the AEM publish instance for pages that reference a specific asset path.
+### Asset Expiration
 
-### 3. Extend Expiration
-Updates the asset's `jcr:content/metadata/prism:expirationDate` metadata property to a new date (default: 1 year from today).
+| Prompt | What it does |
+|---|---|
+| `Show me all expired assets` | Lists every asset past its expiration date |
+| `What assets expire in the next 30 days?` | Shows assets expiring soon |
+| `Show recently expired assets from the last 7 days` | Assets that just expired |
+| `Find expired assets with "campaign" in the path` | Filtered search |
 
-## Available Tools
+### Reference Checking
 
-- **list_expired_assets** - Find all expired assets in DAM (with optional filter)
-- **check_asset_references** - Find published pages that use an asset
-- **extend_asset_expiration** - Update asset expiration date
+| Prompt | What it does |
+|---|---|
+| `Which pages use /content/dam/site/hero.jpg?` | Finds published pages referencing the asset |
+| `Check references for /content/dam/site/logo.png including unpublished pages` | Includes draft/unpublished pages |
+
+### Expiration Management
+
+| Prompt | What it does |
+|---|---|
+| `Extend /content/dam/site/doc.pdf by 2 years` | Adds 2 years to current expiration |
+| `Set expiration of /content/dam/site/banner.jpg to 2027-12-31` | Sets a specific date |
+
+### Log Analysis
+
+| Prompt | What it does |
+|---|---|
+| `Show me errors from the last 24 hours` | Recent error log entries |
+| `Find 404 errors in DAM` | DAM-specific 404s |
+| `Publishing errors in the last 2 hours` | Replication/publish issues |
+| `Workflow errors from the last 7 days` | Workflow-related failures |
+
+### Multi-Step Workflows
+
+```
+Find all expired assets, check which ones are still referenced by published pages,
+and extend by 1 year any that are actively used.
+```
+
+```
+Show me assets expiring in the next 7 days, then check if any are used on
+published pages — I want to prioritize renewals.
+```
 
 ## AEM Requirements
 
 Your AEM instance needs:
-- QueryBuilder API enabled (available by default)
-- REST API asset update access
-- Service account/user with:
-  - Read access to `/content/dam`
+
+- **QueryBuilder API** — enabled by default on AEM
+- **REST API access** — for asset metadata updates
+- **Service account permissions:**
+  - Read access to `/content/dam` (assets)
   - Read access to `/content` (pages)
-  - Write access to asset metadata on author
+  - Write access to asset metadata on author (for `extend_asset_expiration`)
   - Access to both author and publish instances
 
 ## Troubleshooting
 
-**"Cannot connect to AEM"**
-- Check AEM_AUTHOR_URL and AEM_PUBLISH_URL are correct
-- Verify credentials (username/password)
-- Check network connectivity
-
-**"Asset has no expiration date"**
-- Not all assets have the `jcr:content/metadata/prism:expirationDate` property
-- The tool only finds assets with explicit expiration dates set
-
-**"No pages found as references"**
-- Assets might be referenced programmatically (not in page content)
-- Check your publish instance has the content
-- May need broader reference checking logic
+| Problem | Solution |
+|---|---|
+| Hammer icon not visible | Check the config file path and JSON syntax. Restart Claude Desktop completely. |
+| "Cannot connect to AEM" | Verify `AEM_AUTHOR_URL` and `AEM_PUBLISH_URL`. Check credentials and network access. |
+| "Asset has no expiration date" | Only assets with `prism:expirationDate` metadata are tracked. |
+| "No pages found" | Asset may be referenced programmatically. Try `includeUnpublished: true`. |
+| 0 results for log queries | Check the time range — logs may not go back far enough. Try `7d` instead of `24h`. |
+| Tools not appearing | Run `npm run build` and restart Claude Desktop. |
 
 ## Development
 
 ```bash
 npm run build     # Compile TypeScript
 npm run dev       # Watch mode (auto-recompile on changes)
-npm run test      # Run tests
-npm run lint      # Lint code
 ```
-
-## License
-
-MIT
