@@ -1,15 +1,16 @@
 /**
- * Configuration management for AEM DAM Expiration tool
+ * Configuration management for AEM MCP Server
+ * Loads AEM connection settings from environment variables or .env file
  */
 
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 
-// Load .env file from project root
+// Resolve .env file from project root (two levels up from src/aem/)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const envPath = resolve(__dirname, '..', '.env');
+const envPath = resolve(__dirname, '..', '..', '.env');
 dotenv.config({ path: envPath });
 
 export interface AEMConfig {

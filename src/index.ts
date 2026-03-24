@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * AEM DAM Expiration Manager - MCP Server
- * Manages asset expiration, reference checking, and auto-renewal
+ * AEM MCP Server
+ * Provides asset lifecycle management, reference tracking, and log analysis for AEM
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -137,7 +137,7 @@ const TOOLS: Tool[] = [
   },
 ];
 
-class AEMExpirationServer {
+class AEMMCPServer {
   private server: Server;
   private config: AEMConfig;
   private aemClient: AEMClient;
@@ -245,9 +245,9 @@ class AEMExpirationServer {
   async run(): Promise<void> {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.error('AEM DAM Expiration Manager MCP server running');
+    console.error('AEM MCP Server running');
   }
 }
 
-const server = new AEMExpirationServer();
+const server = new AEMMCPServer();
 server.run().catch(console.error);
