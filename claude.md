@@ -44,9 +44,7 @@ src/
 ├── asset-config.ts            # Environment variable loading
 ├── constants.ts               # Magic strings and config - keep DRY
 ├── tools/                     # Each tool gets its own file
-│   ├── list-expired-assets.ts
-│   ├── list-expiring-soon.ts
-│   ├── list-recently-expired.ts
+│   ├── list-assets-by-expiration.ts  # Unified: expired, expiring-soon, recently-expired
 │   ├── check-references.ts
 │   ├── extend-expiration.ts  # ⚠️ WRITE OPERATION
 │   └── analyze-logs.ts       # Log analysis with caching

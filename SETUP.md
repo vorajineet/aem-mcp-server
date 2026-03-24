@@ -90,12 +90,10 @@ aem-mcp-server/
 │   ├── asset-config.ts                   # Configuration management
 │   ├── constants.ts                      # Centralized configuration constants
 │   ├── tools/
-│   │   ├── list-expired-assets.ts        # Tool: List expired assets
-│   │   ├── list-expiring-soon.ts         # Tool: List assets expiring soon
-│   │   ├── list-recently-expired.ts      # Tool: List recently expired assets
+│   │   ├── list-assets-by-expiration.ts  # Tool: List assets by expiration status
 │   │   ├── check-references.ts           # Tool: Find page references
 │   │   ├── extend-expiration.ts          # Tool: Update expiration dates (⚠️ write op)
-│   │   └── analyze-logs.ts               # Tool: Analyze AEM logs with NLP
+│   │   └── analyze-logs.ts              # Tool: Analyze AEM logs with NLP
 │   └── utils/
 │       ├── date-utils.ts                 # Date manipulation helpers
 │       ├── timeframe-parser.ts           # Natural language timeframe parsing
@@ -105,8 +103,7 @@ aem-mcp-server/
 ├── tsconfig.json
 ├── README.md
 ├── SETUP.md                              # This file
-├── .env.example
-└── claude_desktop_config_example.json
+└── claude.md                             # Claude project instructions
 ```
 
 ## How It Works

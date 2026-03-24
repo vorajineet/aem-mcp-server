@@ -16,17 +16,9 @@ import {
 import { loadConfig, AEMConfig } from './asset-config.js';
 import { AEMClient } from './aem-client.js';
 import {
-  listExpiredAssets,
-  ListExpiredAssetsInput,
-} from './tools/list-expired-assets.js';
-import {
-  listExpiringSoon,
-  ListExpiringSoonInput,
-} from './tools/list-expiring-soon.js';
-import {
-  listRecentlyExpired,
-  ListRecentlyExpiredInput,
-} from './tools/list-recently-expired.js';
+  listAssetsByExpiration,
+  ListAssetsByExpirationInput,
+} from './tools/list-assets-by-expiration.js';
 import {
   checkAssetReferences,
   CheckReferencesInput,
@@ -42,49 +34,29 @@ import {
 
 const TOOLS: Tool[] = [
   {
-    name: 'list_expired_assets',
+    name: 'list_assets_by_expiration',
     description:
-      'List all expired assets in AEM DAM. Returns assets where prism:expirationDate is in the past.',
+      'List AEM DAM assets by their expiration status. Use status "expired" for all expired assets, "expiring-soon" for assets approaching expiration, or "recently-expired" for assets that expired within a recent timeframe. Timeframe is required for "expiring-soon" and "recently-expired".',
     inputSchema: {
       type: 'object' as const,
       properties: {
+        status: {
+          type: 'string',
+          enum: ['expired', 'expiring-soon', 'recently-expired'],
+          description:
+            'Expiration status to query: "expired" (all past expiration), "expiring-soon" (approaching expiration), "recently-expired" (expired within a recent timeframe)',
+        },
+        timeframe: {
+          type: 'string',
+          description:
+            'Required for "expiring-soon" and "recently-expired". Examples: "30 days", "2 months", "1 year", "1 hour"',
+        },
         filter: {
           type: 'string',
           description: 'Optional filter string to match asset path or name',
         },
       },
-    },
-  },
-  {
-    name: 'list_expiring_soon',
-    description:
-      'List assets that will expire within a specified timeframe (e.g., "30 days", "2 months", "1 year"). These are not expired yet but are approaching expiration.',
-    inputSchema: {
-      type: 'object' as const,
-      properties: {
-        timeframe: {
-          type: 'string',
-          description:
-            'Timeframe for expiration (e.g., "30 days", "2 months", "6 months", "1 year"). Format: "<number> <unit>" where unit is day, month, or year',
-        },
-      },
-      required: ['timeframe'],
-    },
-  },
-  {
-    name: 'list_recently_expired',
-    description:
-      'List assets that have already expired within a specified timeframe (e.g., "1 hour", "1 day", "30 days"). Shows recently expired assets that may need attention.',
-    inputSchema: {
-      type: 'object' as const,
-      properties: {
-        timeframe: {
-          type: 'string',
-          description:
-            'Timeframe for recently expired (e.g., "1 hour", "1 day", "30 days"). Format: "<number> <unit>" where unit is hour, day, month, or year',
-        },
-      },
-      required: ['timeframe'],
+      required: ['status'],
     },
   },
   {
@@ -198,24 +170,10 @@ class AEMExpirationServer {
 
       try {
         switch (toolName) {
-          case 'list_expired_assets':
-            result = await listExpiredAssets(
+          case 'list_assets_by_expiration':
+            result = await listAssetsByExpiration(
               this.aemClient,
-              toolInput as ListExpiredAssetsInput
-            );
-            break;
-
-          case 'list_expiring_soon':
-            result = await listExpiringSoon(
-              this.aemClient,
-              toolInput as ListExpiringSoonInput
-            );
-            break;
-
-          case 'list_recently_expired':
-            result = await listRecentlyExpired(
-              this.aemClient,
-              toolInput as ListRecentlyExpiredInput
+              toolInput as ListAssetsByExpirationInput
             );
             break;
 

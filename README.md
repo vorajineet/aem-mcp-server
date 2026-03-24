@@ -9,9 +9,7 @@ A comprehensive Model Context Protocol (MCP) server for Adobe Experience Manager
 ## Features
 
 ### Asset Lifecycle Management
-- **List Expired Assets** - Query AEM DAM for assets past their expiration date
-- **List Expiring Soon** - Find assets approaching expiration (configurable timeframe)
-- **List Recently Expired** - Identify assets that recently expired
+- **List Assets by Expiration** - Query assets by status: expired, expiring soon, or recently expired (with configurable timeframe and optional filter)
 - **Check Page References** - Determine which published pages reference specific assets
 - **Extend Expiration** - Automatically extend asset expiration dates
 
@@ -64,9 +62,7 @@ Configure Claude Desktop by updating `~/Library/Application Support/Claude/claud
 The server exposes the following tools through the MCP protocol:
 
 ### Asset Management
-- `list_expired_assets` - Get all expired assets in AEM DAM with metadata
-- `list_expiring_soon` - Find assets approaching expiration (configurable timeframe)
-- `list_recently_expired` - Query recently expired assets
+- `list_assets_by_expiration` - List assets by expiration status: `expired`, `expiring-soon`, or `recently-expired`. Supports timeframe and filter parameters.
 - `check_asset_references` - Find published pages that reference a specific asset
 - **⚠️ `extend_asset_expiration`** - **WRITE OPERATION** - Extend asset expiration dates. Modifies AEM asset metadata. Use with caution.
 
@@ -74,32 +70,23 @@ The server exposes the following tools through the MCP protocol:
 - `analyze_aem_logs` - Query AEM logs with natural language filtering and caching
 
 **Legend:** ⚠️ indicates tools that modify content and should be used carefully.
-
-## Development
-
-```bash
-npm run dev          # Watch mode
-npm run test         # Run tests
-npm run lint         # Lint code
 ```
 
 ## Architecture
 
 ```
 src/
-├── index.ts                    # MCP server entry point
-├── aem-client.ts               # AEM REST API wrapper with parallel fetch optimization
-├── asset-config.ts             # Configuration and environment management
-├── constants.ts                # Centralized configuration constants
+├── index.ts                         # MCP server entry point
+├── aem-client.ts                    # AEM REST API wrapper with parallel fetch optimization
+├── asset-config.ts                  # Configuration and environment management
+├── constants.ts                     # Centralized configuration constants
 ├── tools/
-│   ├── list-expired-assets.ts  # Query expired assets tool
-│   ├── list-expiring-soon.ts   # Query assets expiring soon tool
-│   ├── list-recently-expired.ts# Query recently expired assets tool
-│   ├── check-references.ts     # Check asset page references tool
-│   ├── extend-expiration.ts    # Extend asset expiration tool
-│   └── analyze-logs.ts         # Analyze AEM logs with NLP and caching
+│   ├── list-assets-by-expiration.ts # Query assets by expiration status
+│   ├── check-references.ts          # Check asset page references tool
+│   ├── extend-expiration.ts         # Extend asset expiration tool (⚠️ write op)
+│   └── analyze-logs.ts              # Analyze AEM logs with NLP and caching
 └── utils/
-    ├── date-utils.ts           # Date parsing and calculation helpers
-    ├── timeframe-parser.ts      # Natural language timeframe parsing
-    └── logger.ts               # Environment-aware logging utility
+    ├── date-utils.ts                # Date parsing and calculation helpers
+    ├── timeframe-parser.ts          # Natural language timeframe parsing
+    └── logger.ts                    # Environment-aware logging utility
 ```
