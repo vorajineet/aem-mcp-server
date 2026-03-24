@@ -62,13 +62,17 @@ const TOOLS: Tool[] = [
   {
     name: 'check_asset_references',
     description:
-      'Check which published pages reference a specific asset. Helps determine if an asset is safe to let expire.',
+      'Check which pages reference a specific asset. By default only shows published pages. Set includeUnpublished to true to also see unpublished pages.',
     inputSchema: {
       type: 'object' as const,
       properties: {
         assetPath: {
           type: 'string',
           description: 'Full path to the asset (e.g., /content/dam/my-site/image.jpg)',
+        },
+        includeUnpublished: {
+          type: 'boolean',
+          description: 'Include unpublished pages in results. Default: false (only published pages)',
         },
       },
       required: ['assetPath'],

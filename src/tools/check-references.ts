@@ -6,6 +6,7 @@ import { AEMClient } from '../aem/aem-client.js';
 
 export interface CheckReferencesInput {
   assetPath: string;
+  includeUnpublished?: boolean;
 }
 
 export async function checkAssetReferences(
@@ -16,11 +17,14 @@ export async function checkAssetReferences(
     throw new Error('assetPath is required');
   }
 
+  const includeUnpublished = input.includeUnpublished ?? false;
+
   try {
-    const references = await client.getAssetReferences(input.assetPath);
+    const references = await client.getAssetReferences(input.assetPath, includeUnpublished);
 
     if (references.length === 0) {
-      return `Asset ${input.assetPath} is not referenced in any published pages.`;
+      const scope = includeUnpublished ? 'any' : 'any published';
+      return `Asset ${input.assetPath} is not referenced in ${scope} pages.`;
     }
 
     const details = references
@@ -28,11 +32,13 @@ export async function checkAssetReferences(
         (ref) =>
           `• ${ref.path}\n` +
           `  Title: ${ref.title || 'no title'}\n` +
-          `  Last Published: ${ref.lastPublished || 'unknown'}`
+          `  Status: ${ref.status || 'unknown'}\n` +
+          `  Last Published: ${ref.lastPublished || 'N/A'}`
       )
       .join('\n');
 
-    return `Found ${references.length} published pages referencing asset:\n${details}`;
+    const scope = includeUnpublished ? 'pages (published + unpublished)' : 'published pages';
+    return `Found ${references.length} ${scope} referencing asset:\n${details}`;
   } catch (error) {
     throw new Error(
       `Failed to check asset references: ${String(error)}`

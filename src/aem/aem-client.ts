@@ -297,9 +297,9 @@ export class AEMClient {
   }
 
   /**
-   * Find all pages that reference an asset and check if they are published
+   * Find all pages that reference an asset, optionally including unpublished pages
    */
-  async getAssetReferences(assetPath: string): Promise<PageReference[]> {
+  async getAssetReferences(assetPath: string, includeUnpublished: boolean = false): Promise<PageReference[]> {
     const params = new URLSearchParams({
       path: '/content',
       type: 'cq:Page',
@@ -326,31 +326,39 @@ export class AEMClient {
       console.error('[DEBUG] Fetched properties for', result.hits.length, 'pages');
       
       // Process results
-      const publishedPages: PageReference[] = [];
+      const pages: PageReference[] = [];
       for (let i = 0; i < result.hits.length; i++) {
         const hit = result.hits[i];
         const pageProps = pagePropsResults[i];
         
         if (pageProps) {
-          // Check if page has been published by looking for cq:lastReplicated
-          const isPublished = pageProps['cq:lastReplicated'] !== undefined || 
-                             pageProps['cq:lastReplicatedby'] !== undefined;
+          const replicationAction = pageProps['cq:lastReplicationAction'];
+          const isPublished = replicationAction === 'Activate';
+          const isDeactivated = replicationAction === 'Deactivate';
           
-          console.error(`[DEBUG] ${hit.path}: isPublished=${isPublished}, lastReplicated=${pageProps['cq:lastReplicated']}`);
+          console.error(`[DEBUG] ${hit.path}: replicationAction=${replicationAction}, isPublished=${isPublished}`);
           
           if (isPublished) {
-            publishedPages.push({
+            pages.push({
               path: hit.path,
               title: pageProps['jcr:title'] || hit.name,
               status: 'published',
               lastPublished: pageProps['cq:lastReplicated'],
             });
+          } else if (includeUnpublished) {
+            pages.push({
+              path: hit.path,
+              title: pageProps['jcr:title'] || hit.name,
+              status: isDeactivated ? 'deactivated' : 'unpublished',
+              lastPublished: undefined,
+            });
           }
         }
       }
       
-      console.error('[DEBUG] Found', publishedPages.length, 'published pages referencing the asset');
-      return publishedPages;
+      console.error('[DEBUG] Found', pages.length, 'pages referencing the asset',
+        includeUnpublished ? '(published + unpublished)' : '(published only)');
+      return pages;
     } catch (error) {
       throw new Error(
         `Failed to find asset references: ${String(error)}`
