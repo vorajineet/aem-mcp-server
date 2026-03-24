@@ -7,9 +7,13 @@ import { AEMClient } from '../aem-client.js';
 import AdmZip from 'adm-zip';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { parseCompactTimeRange } from '../utils/timeframe-parser.js';
 
-const LOGS_CACHE_DIR = './logs-cache';
+// Get the directory where this script is located
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// Create cache directory in project root (parent of src/tools)
+const LOGS_CACHE_DIR = path.join(__dirname, '../../logs-cache');
 const CACHE_VALIDITY_MS = 10 * 60 * 1000; // 10 minutes
 
 // Track last cache time
@@ -19,9 +23,14 @@ let lastCacheTime = 0;
  * Ensure cache directory exists
  */
 function ensureCacheDir(): void {
-  if (!fs.existsSync(LOGS_CACHE_DIR)) {
-    fs.mkdirSync(LOGS_CACHE_DIR, { recursive: true });
-    console.error('[CACHE] Created cache directory:', LOGS_CACHE_DIR);
+  try {
+    if (!fs.existsSync(LOGS_CACHE_DIR)) {
+      fs.mkdirSync(LOGS_CACHE_DIR, { recursive: true });
+      console.error('[CACHE] Created cache directory:', LOGS_CACHE_DIR);
+    }
+  } catch (error) {
+    console.error('[CACHE] Error creating cache directory:', error);
+    throw new Error(`Failed to create cache directory at ${LOGS_CACHE_DIR}: ${error}`);
   }
 }
 
