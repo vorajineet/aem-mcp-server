@@ -86,9 +86,10 @@ Example conversations:
 aem-mcp-server/
 ├── src/
 │   ├── index.ts                          # MCP server entry point
-│   ├── aem-client.ts                     # AEM REST API wrapper
-│   ├── asset-config.ts                   # Configuration management
-│   ├── constants.ts                      # Centralized configuration constants
+│   ├── aem/
+│   │   ├── aem-client.ts                # AEM REST API wrapper
+│   │   ├── asset-config.ts              # Configuration management
+│   │   └── constants.ts                 # Centralized configuration constants
 │   ├── tools/
 │   │   ├── list-assets-by-expiration.ts  # Tool: List assets by expiration status
 │   │   ├── check-references.ts           # Tool: Find page references

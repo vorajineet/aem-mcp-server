@@ -2,7 +2,7 @@
  * Tool to extend asset expiration dates
  */
 
-import { AEMClient } from '../aem-client.js';
+import { AEMClient } from '../aem/aem-client.js';
 import { addYears, formatDate } from '../utils/date-utils.js';
 
 export interface ExtendExpirationInput {

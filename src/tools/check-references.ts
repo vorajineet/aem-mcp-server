@@ -2,7 +2,7 @@
  * Tool to check which published pages reference an asset
  */
 
-import { AEMClient } from '../aem-client.js';
+import { AEMClient } from '../aem/aem-client.js';
 
 export interface CheckReferencesInput {
   assetPath: string;

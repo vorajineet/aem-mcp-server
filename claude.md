@@ -40,9 +40,10 @@ This is a **Model Context Protocol (MCP) server** for Adobe Experience Manager (
 ```
 src/
 ├── index.ts                    # MCP server entry point - register tools here
-├── aem-client.ts              # AEM API wrapper - add new API calls here
-├── asset-config.ts            # Environment variable loading
-├── constants.ts               # Magic strings and config - keep DRY
+├── aem/                        # AEM-specific modules
+│   ├── aem-client.ts          # AEM API wrapper - add new API calls here
+│   ├── asset-config.ts        # Environment variable loading
+│   └── constants.ts           # Magic strings and config - keep DRY
 ├── tools/                     # Each tool gets its own file
 │   ├── list-assets-by-expiration.ts  # Unified: expired, expiring-soon, recently-expired
 │   ├── check-references.ts

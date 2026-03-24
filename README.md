@@ -77,9 +77,10 @@ The server exposes the following tools through the MCP protocol:
 ```
 src/
 ├── index.ts                         # MCP server entry point
-├── aem-client.ts                    # AEM REST API wrapper with parallel fetch optimization
-├── asset-config.ts                  # Configuration and environment management
-├── constants.ts                     # Centralized configuration constants
+├── aem/
+│   ├── aem-client.ts                # AEM REST API wrapper with parallel fetch optimization
+│   ├── asset-config.ts              # Configuration and environment management
+│   └── constants.ts                 # Centralized configuration constants
 ├── tools/
 │   ├── list-assets-by-expiration.ts # Query assets by expiration status
 │   ├── check-references.ts          # Check asset page references tool

@@ -13,8 +13,8 @@ import {
   TextContent,
   Tool,
 } from '@modelcontextprotocol/sdk/types.js';
-import { loadConfig, AEMConfig } from './asset-config.js';
-import { AEMClient } from './aem-client.js';
+import { loadConfig, AEMConfig } from './aem/asset-config.js';
+import { AEMClient } from './aem/aem-client.js';
 import {
   listAssetsByExpiration,
   ListAssetsByExpirationInput,

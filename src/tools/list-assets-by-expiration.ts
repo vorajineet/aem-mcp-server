@@ -5,7 +5,7 @@
  * - recently-expired: assets that expired within a recent timeframe
  */
 
-import { AEMClient } from '../aem-client.js';
+import { AEMClient } from '../aem/aem-client.js';
 import { parseNaturalLanguageTimeframe } from '../utils/timeframe-parser.js';
 
 export interface ListAssetsByExpirationInput {
