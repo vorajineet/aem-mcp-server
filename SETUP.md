@@ -50,7 +50,9 @@ Pass credentials directly through the Claude Desktop config (see step 3 below).
 - Rotate credentials regularly
 - Use a dedicated service account with minimal required permissions
 
-## 3. Configure Claude Desktop
+## 3. Configure Claude Desktop or Cursor
+
+### Claude Desktop
 
 Claude Desktop uses a JSON config file to register MCP servers. Edit:
 
@@ -97,6 +99,61 @@ Claude Desktop uses a JSON config file to register MCP servers. Edit:
 2. **Reopen Claude Desktop**
 3. Look for the **hammer icon** (🔨) in the chat input — this confirms the MCP server is connected
 4. Click the hammer icon to see the list of available tools
+
+### Cursor
+
+Cursor supports MCP servers through its settings. You can configure the AEM MCP server in two ways:
+
+### Option A: Project-level config (recommended)
+
+Create a `.cursor/mcp.json` file in your project root:
+
+#### With credentials via `.env` file:
+
+```json
+{
+  "mcpServers": {
+    "aem-mcp-server": {
+      "command": "node",
+      "args": ["/absolute/path/to/aem-mcp-server/dist/index.js"]
+    }
+  }
+}
+```
+
+#### With credentials inline:
+
+```json
+{
+  "mcpServers": {
+    "aem-mcp-server": {
+      "command": "node",
+      "args": ["/absolute/path/to/aem-mcp-server/dist/index.js"],
+      "env": {
+        "AEM_AUTHOR_URL": "https://author.example.com",
+        "AEM_PUBLISH_URL": "https://publish.example.com",
+        "AEM_USERNAME": "your-account",
+        "AEM_PASSWORD": "your-password"
+      }
+    }
+  }
+}
+```
+
+> Replace `/absolute/path/to/aem-mcp-server` with the actual path where you cloned the project.
+
+### Option B: Global config
+
+Create or edit `~/.cursor/mcp.json` with the same JSON structure above. This makes the server available across all your Cursor projects.
+
+### After saving the config
+
+1. Open **Cursor Settings** → **MCP** to verify the server appears in the list
+2. Ensure the server status shows a **green indicator** (connected)
+3. If the server doesn't connect, click the **refresh** button next to it
+4. The AEM tools will now be available in Cursor's Agent mode (⌘I / Ctrl+I)
+
+> **Note:** MCP tools in Cursor are available in **Agent mode** only, not in the normal chat or edit modes.
 
 ## 4. Disabling Tools
 
