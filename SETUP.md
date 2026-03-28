@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - **Node.js 18+** — [Download](https://nodejs.org/)
-- **Claude Desktop** — [Download](https://claude.ai/download)
+- **Claude Desktop** — [Download](https://claude.ai/download) or Cursor - [Download](https://cursor.com/download)
 - **AEM instance** with API access (author + publish)
 - **AEM credentials** — username/password or service account token
 
