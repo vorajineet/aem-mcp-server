@@ -1,6 +1,6 @@
 # AEM MCP Server
 
-A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server for Adobe Experience Manager (AEM) that gives Claude Desktop direct access to your AEM instance — manage asset expirations, check page references, and analyze logs through natural conversation.
+A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server for Adobe Experience Manager (AEM) that gives Claude Desktop or Cursor direct access to your AEM instance — manage asset expirations, check page references, and analyze logs through natural conversation.
 
 ## What Can It Do?
 
@@ -18,7 +18,7 @@ npm install
 npm run build
 ```
 
-Then configure Claude Desktop — see [SETUP.md](SETUP.md) for the full guide.
+Then configure Claude Desktop or Cursor — see [SETUP.md](SETUP.md) for the full guide.
 
 ## Available Tools
 
