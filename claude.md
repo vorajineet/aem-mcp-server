@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This is a **Model Context Protocol (MCP) server** for Adobe Experience Manager (AEM) that provides comprehensive asset lifecycle management and log analysis capabilities for Claude Desktop or Cursor.
+This is a **Model Context Protocol (MCP) server** for Adobe Experience Manager (AEM) that provides comprehensive asset lifecycle management and log analysis capabilities for Claude Desktop or Cursor. 
 
 ### Core Capabilities
 1. **Asset Expiration Management** - Track, find, and extend asset expiration dates
