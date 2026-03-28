@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - **Node.js 18+** — [Download](https://nodejs.org/)
-- **Claude Desktop** — [Download](https://claude.ai/download) or Cursor - [Download](https://cursor.com/download)
+- **Claude Desktop** — [Download](https://claude.ai/download) or Cursor — [Download](https://cursor.com/download)
 - **AEM instance** with API access (author + publish)
 - **AEM credentials** — username/password or service account token
 
@@ -52,7 +52,7 @@ Pass credentials directly through the Claude Desktop config (see step 3 below).
 
 ## 3. Configure Claude Desktop or Cursor
 
-### Claude Desktop
+### -> For Claude Desktop:
 
 Claude Desktop uses a JSON config file to register MCP servers. Edit:
 
@@ -100,7 +100,7 @@ Claude Desktop uses a JSON config file to register MCP servers. Edit:
 3. Look for the **hammer icon** (🔨) in the chat input — this confirms the MCP server is connected
 4. Click the hammer icon to see the list of available tools
 
-### Cursor
+### -> For Cursor
 
 Cursor supports MCP servers through its settings. You can configure the AEM MCP server in two ways:
 
@@ -157,10 +157,10 @@ Create or edit `~/.cursor/mcp.json` with the same JSON structure above. This mak
 
 ## 4. Disabling Tools
 
-You can disable specific tools without modifying code by using Claude Desktop's **tool approval** feature:
+You can disable specific tools without modifying code by using Claude Desktop's or Cursor's **tool approval** feature:
 
 ### Per-conversation control
-When Claude wants to use a tool, it shows a confirmation prompt. You can:
+When Claude/Cursor wants to use a tool, it shows a confirmation prompt. You can:
 - **Allow once** — permit the tool call this one time
 - **Allow for this chat** — permit all calls to this tool in the current conversation
 - **Deny** — block the tool call
@@ -177,7 +177,7 @@ The `extend_asset_expiration` tool is the only write operation. If you want read
 Then rebuild: `npm run build`
 
 ### Removing the entire MCP server
-Delete or rename the `aem-mcp-server` entry in your `claude_desktop_config.json` and restart Claude Desktop.
+Delete or rename the `aem-mcp-server` entry in your `claude_desktop_config.json` or `mcp.json` and restart the application.
 
 ## 5. Verify It Works
 
