@@ -39,16 +39,13 @@ AEM_PASSWORD=your-api-token-or-password
 
 > The `.env` file is git-ignored and should **never** be committed.
 
-### Option B: Claude Desktop config (recommended for production)
+### Option B: Secrets manager or short-lived tokens (recommended for production)
 
-Pass credentials directly through the Claude Desktop config (see step 3 below).
+For production environments, avoid storing credentials in plaintext:
 
-### Security Best Practices
-
-- Never commit credentials to version control
-- Prefer temporary/expiring API tokens over permanent passwords
-- Rotate credentials regularly
-- Use a dedicated service account with minimal required permissions
+- **OAuth/IMS tokens** — Use Adobe IMS service account tokens that auto-expire
+- **Secrets manager** — Read credentials at runtime from AWS Secrets Manager, Azure Key Vault, HashiCorp Vault, or 1Password CLI
+- **Client config `env` section** — Pass credentials directly through the Claude Desktop or Cursor config (see step 3 below)
 
 ## 3. Configure Claude Desktop or Cursor
 
@@ -155,6 +152,8 @@ Create or edit `~/.cursor/mcp.json` with the same JSON structure above. This mak
 
 > **Note:** MCP tools in Cursor are available in **Agent mode** only, not in the normal chat or edit modes.
 
+> **Production usage:** A remote MCP server is preferred for teams — run the server as an HTTP service that clients connect to over the network (behind a VPN or auth gateway).
+
 ## 4. Disabling Tools
 
 You can disable specific tools without modifying code by using Claude Desktop's or Cursor's **tool approval** feature:
@@ -181,7 +180,7 @@ Delete or rename the `aem-mcp-server` entry in your `claude_desktop_config.json`
 
 ## 5. Verify It Works
 
-After configuring, open Claude Desktop and try:
+After configuring, open Claude Desktop or Cursor and try:
 
 ```
 Show me all expired assets
@@ -222,6 +221,40 @@ If the server is connected, Claude will call the `list_assets_by_expiration` too
 | `Find 404 errors in DAM` | DAM-specific 404s |
 | `Publishing errors in the last 2 hours` | Replication/publish issues |
 | `Workflow errors from the last 7 days` | Workflow-related failures |
+
+### Multi-Step Workflows
+
+```
+Find all expired assets, check which ones are still referenced by published pages,
+and extend by 1 year any that are actively used.
+```
+
+```
+Show me assets expiring in the next 7 days, then check if any are used on
+published pages — I want to prioritize renewals.
+```
+
+## AEM Requirements
+
+Your AEM instance needs:
+
+- **QueryBuilder API** — enabled by default on AEM
+- **REST API access** — for asset metadata updates
+- **Service account permissions:**
+  - Read access to `/content/dam` (assets)
+  - Read access to `/content` (pages)
+  - Write access to asset metadata on author (for `extend_asset_expiration`)
+  - Access to both author and publish instances
+
+## Troubleshooting
+
+| Problem | Solution |
+|---|---|
+| Hammer icon not visible (Claude Desktop) | Check the config file path and JSON syntax. Restart Claude Desktop completely. |
+| Server not connected (Cursor) | Open Settings → MCP and click the refresh button. Check JSON syntax in `.cursor/mcp.json`. |
+| "Cannot connect to AEM" | Verify `AEM_AUTHOR_URL` and `AEM_PUBLISH_URL`. Check credentials and network access. |
+| "Asset has no expiration date" | Only assets with `prism:expirationDate` metadata are tracked. |
+| "No pages found" | Asset may be referenced programmatically. Try `includeUnpublished: true`. |
 
 ### Multi-Step Workflows
 
