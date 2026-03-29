@@ -26,26 +26,18 @@ You need four environment variables:
 | `AEM_USERNAME` | Service account or user | `my-service-account` |
 | `AEM_PASSWORD` | Password or API token | `my-api-token` |
 
-### Option A: `.env` file (recommended for development)
-
-Create a `.env` file in the project root:
+Edit the `.env` file in the project root with your AEM instance details:
 
 ```env
-AEM_AUTHOR_URL=https://author.example.com
-AEM_PUBLISH_URL=https://publish.example.com
-AEM_USERNAME=your-service-account
-AEM_PASSWORD=your-api-token-or-password
+AEM_AUTHOR_URL=http://localhost:4502
+AEM_PUBLISH_URL=http://localhost:4503
+AEM_USERNAME=admin
+AEM_PASSWORD=admin
 ```
 
-> The `.env` file is git-ignored and should **never** be committed.
+The file ships with localhost defaults so you can get started immediately with a local AEM instance.
 
-### Option B: Secrets manager or short-lived tokens (recommended for production)
-
-For production environments, avoid storing credentials in plaintext:
-
-- **OAuth/IMS tokens** — Use Adobe IMS service account tokens that auto-expire
-- **Secrets manager** — Read credentials at runtime from AWS Secrets Manager, Azure Key Vault, HashiCorp Vault, or 1Password CLI
-- **Client config `env` section** — Pass credentials directly through the Claude Desktop or Cursor config (see step 3 below)
+> **Note:** For production environments, use OAuth/IMS tokens or a secrets manager instead of plaintext credentials.
 
 ## 3. Configure Claude Desktop or Cursor
 
